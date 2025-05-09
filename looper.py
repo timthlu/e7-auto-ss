@@ -4,6 +4,8 @@ from bezier_mouse import BezierMouse
 
 import time
 import pyautogui
+import keyboard
+import threading
 
 # constants
 bm_image_path = "./images/bm_image_small.png"
@@ -129,18 +131,46 @@ class Looper:
 
     # refresh loop
     def loop(self):
+        # initialize stopping mechanism
+        # stopping mechanism
+        stop = threading.Event() # use a thread safe variable
+
+        def stop_callback(_):
+            print("Stopping...")
+            stop.set()
+
+        # callback is invoked on another thread
+        keyboard.on_press_key("q", stop_callback)
+
         while True:
             # check and buy bms
             self.check_buy_bms()
 
+            if stop.is_set():
+                break
+
             # scroll down
             self.scroll_down()
+
+            if stop.is_set():
+                break
 
             # check and buy bms again
             self.check_buy_bms()
 
+            if stop.is_set():
+                break
+
             # refresh shop
             self.refresh()
 
+            if stop.is_set():
+                break
+
             # wait a bit before continuing loop for screen to load in
             time.sleep(2)
+
+            if stop.is_set():
+                break
+        
+        print("Stopped")
