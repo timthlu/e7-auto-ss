@@ -134,7 +134,7 @@ def mouse_bez(init_pos, fin_pos, deviation, speed):
 
     #time parameter
     # reduce time stamps
-    time_stamps = speed * randint(20, 30)
+    time_stamps = speed * randint(10, 15)
     ts = [t/time_stamps for t in range(time_stamps + 1)]
     
     #bezier centre control points between (deviation / 2) and (deviaion) of travel distance, plus or minus at random
@@ -171,7 +171,7 @@ def connected_bez(coord_list, deviation, speed):
     i = 1
     points = []
     
-    points.append('click')
+    # points.append('click')
     while i < len(coord_list):
         points += mouse_bez(coord_list[i - 1], coord_list[i], deviation, speed)
         points.append('click')
@@ -180,7 +180,7 @@ def connected_bez(coord_list, deviation, speed):
     return points
 
 
-def move(mouse_points, draw = False, rand_err = True):
+def move(mouse_points, rand_err = True):
     '''
     Moves mouse in accordance with a list of points (continuous curve)
     Input these as a list of points (2-tuple or another list)
@@ -222,17 +222,30 @@ def move(mouse_points, draw = False, rand_err = True):
     mouse_points = [[round(v) for v in x] if type(x) is not str else x for x in mouse_points]
     for coord in mouse_points:
         if coord == 'click':
+            # if rand_err:
+            #     tmp = randint(1,39)
+            #     if tmp == 1:
+            #         # outfile.write('xdotool click 3 \n')
+            #         pyautogui.rightClick()
+            #     elif tmp == 2:
+            #         # getfile.write('xdotool click --repeat 2 1 \n')
+            #         pyautogui.click()
+            #         pyautogui.click()
+            #     elif tmp in range(4, 40):   #if tmp == 4, write nothing
+            #         # outfile.write('xdotool click 1 \n') #normal click
+            #         pyautogui.click()
             if rand_err:
-                tmp = randint(1,39)
+                tmp = randint(1, 39)
                 if tmp == 1:
-                    # outfile.write('xdotool click 3 \n')
+                    # right click then double click
                     pyautogui.rightClick()
+                    pyautogui.click()
                 elif tmp == 2:
-                    # getfile.write('xdotool click --repeat 2 1 \n')
+                    # double click
                     pyautogui.click()
                     pyautogui.click()
-                elif tmp in range(4, 40):   #if tmp == 4, write nothing
-                    # outfile.write('xdotool click 1 \n') #normal click
+                else:
+                    # normal click
                     pyautogui.click()
             else:
                 # outfile.write('xdotool click 1 \n')

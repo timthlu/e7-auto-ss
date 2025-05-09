@@ -1,7 +1,9 @@
-import time
 from vision import Vision
 from noiser import Noiser
 from bezier_mouse import BezierMouse
+
+import time
+import pyautogui
 
 # constants
 bm_image_path = "./images/bm_image_small.png"
@@ -30,6 +32,8 @@ refresh_x = 210
 refresh_y = 705
 middle_x = 850
 middle_y = 400
+middle_width = 400
+middle_height = 400
 buy_confirm_x = 750
 buy_confirm_y = 550
 refresh_confirm_x = 740
@@ -43,6 +47,7 @@ class Looper:
 
         self.bms_bought = 0
         self.mms_bought = 0
+        self.refreshes = 0
 
     # click refresh button
     def refresh(self):
@@ -56,6 +61,10 @@ class Looper:
 
         # move mouse
         self.mouse.move_mouse([refresh_location, refresh_confirm_location])
+
+        self.refreshes += 1
+
+        print(f"refreshes: {self.refreshes}")
 
     # click buy on bm
     def buy_bm(self, location):
@@ -72,6 +81,9 @@ class Looper:
         # move mouse
         self.mouse.move_mouse([buy_location, buy_confirm_location])
 
+        # wait a bit of time for the notification that pops up to disappear
+        time.sleep(2)
+
     # check for bookmarks
     def check_buy_bms(self):
         # check for both bm and mm
@@ -86,8 +98,6 @@ class Looper:
             
             self.bms_bought += 1
             print(f"bms bought: {self.bms_bought}")
-        else:
-            print("bm not found")
         
         # do the same for mm
         mm_found, mm_location = self.vision.image_detection(image, mm_image_path, mm_bought_image_path)
@@ -98,16 +108,20 @@ class Looper:
             
             self.mms_bought += 1
             print(f"mms bought: {self.mms_bought}")
-        else:
-            print("mm not found")
 
     def scroll_down(self):
-        # get the location
+        # get the location of the middle of the screen
         middle_location = [middle_x, middle_y]
-        middle_location = self.noiser.add_mouse_location_noise_middle(middle_location)
+
+        location = pyautogui.position()
 
         # move mouse to middle of right screen
-        self.mouse.move_mouse([middle_location])
+        # do this only if it is not there already
+        if abs(location[0] -  middle_location[0]) > middle_width / 2 or abs(location[1] -  middle_location[1]) > middle_width / 2:
+            middle_location = self.noiser.add_mouse_location_noise_middle(middle_location)
+
+            # move mouse to middle of screen
+            self.mouse.move_mouse([middle_location])
 
         # scroll down
         # move mouse to middle of the right screen
@@ -115,10 +129,6 @@ class Looper:
 
     # refresh loop
     def loop(self):
-        # give some time to manually move cursor to the correct application screen and focus on it
-        time.sleep(3)
-        print("Started looping")
-
         while True:
             # check and buy bms
             self.check_buy_bms()

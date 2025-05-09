@@ -13,4 +13,4 @@ class BezierMouse:
         mouse_points = connected_bez([[start_x, start_y]] + locations, self.deviation, self.speed)
 
         # move mouse
-        move(mouse_points, draw=False, rand_err=False)
+        move(mouse_points, rand_err=True)

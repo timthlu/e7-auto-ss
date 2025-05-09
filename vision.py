@@ -2,9 +2,14 @@ import cv2
 import pyautogui
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 class Vision:
-    def __init__(self, match_threshold=0.8):
+    def __init__(self, window_width=1302, window_height=776, window_location=[0, 0], match_threshold=0.8):
         self.match_threshold = match_threshold
+        self.window_width = window_width
+        self.window_height = window_height
+        self.window_location = window_location
 
     # helper methods
     def get_screenshot(self):
@@ -14,6 +19,11 @@ class Vision:
         # convert the image to a gray cv2 image
         image = np.array(image)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+        # crop to window width and height
+        # image is in rows then columns, so it is y then x
+        image = image[self.window_location[1]:self.window_location[1] + self.window_height, self.window_location[0]:self.window_location[0] + self.window_width]
+
         return image
 
     # image detection
