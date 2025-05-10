@@ -42,7 +42,7 @@ refresh_confirm_x = 740
 refresh_confirm_y = 500
 
 class Looper:
-    def __init__(self, vision : Vision, noiser : Noiser, mouse : BezierMouse):
+    def __init__(self, vision : Vision, noiser : Noiser, mouse : BezierMouse, max_refreshes=3000):
         self.vision = vision
         self.noiser = noiser
         self.mouse = mouse
@@ -50,6 +50,7 @@ class Looper:
         self.bms_bought = 0
         self.mms_bought = 0
         self.refreshes = 0
+        self.max_refreshes = max_refreshes
 
     # click refresh button
     def refresh(self):
@@ -92,21 +93,45 @@ class Looper:
 
         # get screenshot and detect target image
         image = self.vision.get_screenshot()
-        bm_found, bm_location = self.vision.image_detection(image, bm_image_path, bm_bought_image_path)
+        bm_found, bm_location = self.vision.image_detection(image, bm_image_path, 0.95)
 
         if bm_found:
             print("bm found")
-            self.buy_bm(bm_location)
+            
+            # retry loop
+            # retry at most 3 times
+            retries = 0
+            while bm_found and retries < 3:
+                self.buy_bm(bm_location)
+
+                # take screenshot again to make sure bm is gone
+                # if it is still there, retry buying
+                image = self.vision.get_screenshot()
+                bm_found, bm_location = self.vision.image_detection(image, bm_image_path, 0.95)
+
+                retries += 1
             
             self.bms_bought += 1
             print(f"bms bought: {self.bms_bought}")
         
         # do the same for mm
-        mm_found, mm_location = self.vision.image_detection(image, mm_image_path, mm_bought_image_path)
+        mm_found, mm_location = self.vision.image_detection(image, mm_image_path, 0.9)
 
         if mm_found:
             print("mm found")
-            self.buy_bm(mm_location)
+
+            # retry loop
+            # retry at most 3 times
+            retries = 0
+            while mm_found and retries < 3:
+                self.buy_bm(mm_location)
+
+                # take screenshot again to make sure bm is gone
+                # if it is still there, retry buying
+                image = self.vision.get_screenshot()
+                mm_found, mm_location = self.vision.image_detection(image, mm_image_path, 0.9)
+
+                retries += 1
             
             self.mms_bought += 1
             print(f"mms bought: {self.mms_bought}")
@@ -142,7 +167,7 @@ class Looper:
         # callback is invoked on another thread
         keyboard.on_press_key("q", stop_callback)
 
-        while True:
+        while self.refreshes < self.max_refreshes:
             # check and buy bms
             self.check_buy_bms()
 
@@ -174,3 +199,4 @@ class Looper:
                 break
         
         print("Stopped")
+        print(f"Summary: refreshes: {self.refreshes}, bms: {self.bms_bought}, mms: {self.mms_bought}")
