@@ -2,15 +2,15 @@ import random
 import pyautogui
 import time
 
-buy_width = 170
+buy_width = 150
 buy_height = 20
-refresh_width = 270
+refresh_width = 250
 refresh_height = 40
 middle_width = 400
 middle_height = 400
-buy_confirm_width = 220
+buy_confirm_width = 200
 buy_confirm_height = 30
-refresh_confirm_width = 170
+refresh_confirm_width = 150
 refresh_confirm_height = 30
 
 class Noiser:

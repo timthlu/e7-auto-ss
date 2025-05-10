@@ -42,14 +42,18 @@ refresh_confirm_x = 740
 refresh_confirm_y = 500
 
 class Looper:
-    def __init__(self, vision : Vision, noiser : Noiser, mouse : BezierMouse, max_refreshes=3000):
+    def __init__(self, vision : Vision, noiser : Noiser, mouse : BezierMouse, increment_bms, increment_mms, increment_refreshes, trigger_stop, max_refreshes=3000):
         self.vision = vision
         self.noiser = noiser
         self.mouse = mouse
 
-        self.bms_bought = 0
-        self.mms_bought = 0
-        self.refreshes = 0
+        # gui methods
+        self.increment_bms = increment_bms
+        self.increment_mms = increment_mms
+        self.increment_refreshes = increment_refreshes
+        self.trigger_stop = trigger_stop
+
+        self.refreshes = 0 # for stopping condition
         self.max_refreshes = max_refreshes
 
     # click refresh button
@@ -65,9 +69,9 @@ class Looper:
         # move mouse
         self.mouse.move_mouse([refresh_location, refresh_confirm_location])
 
+        # update gui for number of refreshes
+        self.increment_refreshes()
         self.refreshes += 1
-
-        print(f"refreshes: {self.refreshes}")
 
     # click buy on bm
     def buy_bm(self, location):
@@ -111,8 +115,8 @@ class Looper:
 
                 retries += 1
             
-            self.bms_bought += 1
-            print(f"bms bought: {self.bms_bought}")
+            # increment number of bms
+            self.increment_bms()
         
         # do the same for mm
         mm_found, mm_location = self.vision.image_detection(image, mm_image_path, 0.9)
@@ -133,8 +137,8 @@ class Looper:
 
                 retries += 1
             
-            self.mms_bought += 1
-            print(f"mms bought: {self.mms_bought}")
+            # increment number of mms
+            self.increment_mms()
 
     def scroll_down(self):
         # get the location of the middle of the screen
@@ -162,6 +166,11 @@ class Looper:
 
         def stop_callback(_):
             print("Stopping...")
+
+            # update gui
+            # self.trigger_stop()
+
+            # set thread safe flag
             stop.set()
 
         # callback is invoked on another thread
@@ -199,4 +208,3 @@ class Looper:
                 break
         
         print("Stopped")
-        print(f"Summary: refreshes: {self.refreshes}, bms: {self.bms_bought}, mms: {self.mms_bought}")
