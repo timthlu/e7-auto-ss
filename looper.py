@@ -12,6 +12,7 @@ bm_image_path = "./images/bm_image_small.png"
 bm_bought_image_path = "./images/bm_bought_image_small.png"
 mm_image_path = "./images/mm_image_small.png"
 mm_bought_image_path = "./images/mm_bought_image_small.png"
+ss_image_path = "./images/ss_image_small.png"
 
 # for 4k monitor
 # buy_delta_x = 1125
@@ -40,12 +41,22 @@ buy_confirm_x = 750
 buy_confirm_y = 550
 refresh_confirm_x = 740
 refresh_confirm_y = 500
+daily_confirm_x = 1025
+daily_confirm_y = 700
+ss_x = 60
+ss_y = 310
+buffs_x = 650
+buffs_y = 720
 
 class Looper:
     def __init__(self, vision : Vision, noiser : Noiser, mouse : BezierMouse, increment_bms, increment_mms, increment_refreshes, trigger_stop, max_refreshes=3000):
         self.vision = vision
         self.noiser = noiser
         self.mouse = mouse
+
+        # for current refresh
+        self.bm_bought = False
+        self.mm_bought = False
 
         # gui methods
         self.increment_bms = increment_bms
@@ -73,6 +84,10 @@ class Looper:
         self.increment_refreshes()
         self.refreshes += 1
 
+        # reset bm and mm bought flags for next refresh
+        self.bm_bought = False
+        self.mm_bought = False
+
     # click buy on bm
     def buy_bm(self, location):
         # get buy location
@@ -94,51 +109,40 @@ class Looper:
     # check for bookmarks
     def check_buy_bms(self):
         # check for both bm and mm
+        if self.bm_bought and self.mm_bought:
+            # no need to check anymore as cannot be another bm or mm
+            return
 
         # get screenshot and detect target image
         image = self.vision.get_screenshot()
-        bm_found, bm_location = self.vision.image_detection(image, bm_image_path, 0.95)
 
-        if bm_found:
-            print("bm found")
-            
-            # retry loop
-            # retry at most 3 times
-            retries = 0
-            while bm_found and retries < 3:
+        # if bm has already been bought, can skip bm detection step
+        if not self.bm_bought:
+            bm_found, bm_location = self.vision.image_detection(image, bm_image_path)
+
+            if bm_found:
+                print("bm found")
+                
                 self.buy_bm(bm_location)
+                
+                # increment number of bms
+                self.increment_bms()
 
-                # take screenshot again to make sure bm is gone
-                # if it is still there, retry buying
-                image = self.vision.get_screenshot()
-                bm_found, bm_location = self.vision.image_detection(image, bm_image_path, 0.95)
-
-                retries += 1
-            
-            # increment number of bms
-            self.increment_bms()
+                self.bm_bought = True
         
         # do the same for mm
-        mm_found, mm_location = self.vision.image_detection(image, mm_image_path, 0.9)
+        if not self.mm_bought:
+            mm_found, mm_location = self.vision.image_detection(image, mm_image_path)
 
-        if mm_found:
-            print("mm found")
-
-            # retry loop
-            # retry at most 3 times
-            retries = 0
-            while mm_found and retries < 3:
+            if mm_found:
+                print("mm found")
+                
                 self.buy_bm(mm_location)
+                
+                # increment number of mms
+                self.increment_mms()
 
-                # take screenshot again to make sure bm is gone
-                # if it is still there, retry buying
-                image = self.vision.get_screenshot()
-                mm_found, mm_location = self.vision.image_detection(image, mm_image_path, 0.9)
-
-                retries += 1
-            
-            # increment number of mms
-            self.increment_mms()
+                self.mm_bought = True
 
     def scroll_down(self):
         # get the location of the middle of the screen
@@ -157,6 +161,54 @@ class Looper:
         # scroll down
         # move mouse to middle of the right screen
         self.noiser.scroll_with_noise()
+
+    def daily_confirm(self):
+        daily_confirm_location = [daily_confirm_x, daily_confirm_y]
+        daily_confirm_location = self.noiser.add_mouse_location_noise_daily_confirm(daily_confirm_location)
+
+        # move mouse
+        self.mouse.move_mouse([daily_confirm_location])
+
+        # wait a bit of time for the daily login to disappear
+        time.sleep(2)
+
+    def close_buffs(self):
+        buffs_location = [buffs_x, buffs_y]
+        buffs_location = self.noiser.add_mouse_location_noise_buffs(buffs_location)
+
+        # move mouse
+        self.mouse.move_mouse([buffs_location])
+
+        # wait a bit of time for buffs to disappear
+        time.sleep(2)
+
+    def open_ss(self):
+        ss_location = [ss_x, ss_y]
+        ss_location = self.noiser.add_mouse_location_noise_ss(ss_location)
+
+        # move mouse
+        self.mouse.move_mouse([ss_location])
+
+        # wait a bit of time for the secret shop to appear
+        time.sleep(2)
+
+    def check_handle_reset(self):
+        # check whether we are still in the secret shop
+        image = self.vision.get_screenshot()
+        ss_found, _ = self.vision.image_detection(image, ss_image_path)
+
+        while not ss_found:
+            # we are not in the secret shop
+            # press confirm for daily login and secret shop button repeatedly until we are in the secret shop
+            self.daily_confirm()
+
+            self.close_buffs()
+
+            self.open_ss()
+
+            # check whether we are in the secret shop again
+            image = self.vision.get_screenshot()
+            ss_found, _ = self.vision.image_detection(image, ss_image_path)
 
     # refresh loop
     def loop(self):
@@ -177,6 +229,9 @@ class Looper:
         keyboard.on_press_key("q", stop_callback)
 
         while self.refreshes < self.max_refreshes:
+            # check and handle reset
+            self.check_handle_reset()
+
             # check and buy bms
             self.check_buy_bms()
 
@@ -207,4 +262,19 @@ class Looper:
             if stop.is_set():
                 break
         
+        # check shop again after last refresh
+        # do this only if natural stop (not user stop)
+        if not stop.is_set():
+            self.bm_bought = False
+            self.mm_bought = False
+
+            # check and buy bms
+            self.check_buy_bms()
+
+            # scroll down
+            self.scroll_down()
+
+            # check and buy bms again
+            self.check_buy_bms()
+
         print("Stopped")

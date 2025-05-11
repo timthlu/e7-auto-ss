@@ -12,6 +12,12 @@ buy_confirm_width = 200
 buy_confirm_height = 30
 refresh_confirm_width = 150
 refresh_confirm_height = 30
+daily_confirm_width = 40 # needs to be smaller to avoid pressing on the ongoing banners
+daily_confirm_height = 40
+ss_width = 20
+ss_height = 20
+buffs_width = 200
+buffs_height = 20
 
 class Noiser:
     def add_mouse_location_noise_buy(self, location):
@@ -41,6 +47,24 @@ class Noiser:
     def add_mouse_location_noise_middle(self, location):
         location[0] += random.uniform(- middle_width / 2, middle_width / 2)
         location[1] += random.uniform(- middle_height / 2, middle_height / 2)
+
+        return location
+    
+    def add_mouse_location_noise_daily_confirm(self, location):
+        location[0] += random.uniform(- daily_confirm_width / 2, daily_confirm_width / 2)
+        location[1] += random.uniform(- daily_confirm_height / 2, daily_confirm_height / 2)
+
+        return location
+
+    def add_mouse_location_noise_buffs(self, location):
+        location[0] += random.uniform(- buffs_width / 2, buffs_width / 2)
+        location[1] += random.uniform(- buffs_height / 2, buffs_height / 2)
+
+        return location
+
+    def add_mouse_location_noise_ss(self, location):
+        location[0] += random.uniform(- ss_width / 2, ss_width / 2)
+        location[1] += random.uniform(- ss_height / 2, ss_height / 2)
 
         return location
 

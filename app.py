@@ -132,6 +132,22 @@ class App:
             self.start_button = tk.Button(self.root, text="Start!", command=on_start_clicked)
             self.start_button.pack(pady=20)
 
+        def on_reset_stats_clicked():
+            # reset all stats
+            self.bms_bought = 0
+            self.mms_bought = 0
+            self.refreshes = 0
+
+            # reset stat label text
+            self.bm_label.config(text=f"{self.bms_bought}")
+            self.mm_label.config(text=f"{self.mms_bought}")
+            self.refreshes_label.config(text=f"# of Refreshes: {self.refreshes}")
+            self.skystones_spent_label.config(text=f"Skystones spent: {self.refreshes * 3}")
+            self.skystones_bm_label.config(text=f"Skystones / Covenant Summon: N/A")
+            self.skystones_mm_label.config(text=f"Skystones / Mystic Summon: N/A")
+
+            self.root.update()
+
         # initialize gui
         self.root = tk.Tk()
         self.root.title("E7 Auto SS")
@@ -177,6 +193,10 @@ class App:
         # skystones per mystic pull label
         self.skystones_mm_label = tk.Label(self.root, text=f"Skystones / Mystic Summon: N/A")
         self.skystones_mm_label.pack(pady=10)
+
+        # reset stats button
+        self.reset_stats_button = tk.Button(self.root, text="Reset Stats", command=on_reset_stats_clicked)
+        self.reset_stats_button.pack(pady=10)
 
         # control panel label
         control_panel_label = tk.Label(self.root, text="Control Panel", font=("Helvetica", 16, "bold"))
