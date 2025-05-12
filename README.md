@@ -1,4 +1,9 @@
 # Epic Seven Secret Shop Auto Refresher
+
+## Demo
+
+![Demo](videos/e7-auto-ss-demo.gif)
+
 ## Features
 * Takes control of your cursor to automatically refresh the shop and buy covenant bookmarks and mystic medals
 * Implements realistic mouse movements and clicks to avoid detection

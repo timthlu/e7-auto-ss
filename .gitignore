@@ -5,3 +5,6 @@
 /build
 /dist
 main.spec
+
+/videos/*
+!/videos/e7-auto-ss-demo.gif
