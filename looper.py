@@ -1,6 +1,7 @@
 from vision import Vision
 from noiser import Noiser
 from bezier_mouse import BezierMouse
+from resource_path import get_resource_path
 
 import time
 import pyautogui
@@ -8,11 +9,9 @@ import keyboard
 import threading
 
 # constants
-bm_image_path = "./images/bm_image_small.png"
-bm_bought_image_path = "./images/bm_bought_image_small.png"
-mm_image_path = "./images/mm_image_small.png"
-mm_bought_image_path = "./images/mm_bought_image_small.png"
-ss_image_path = "./images/ss_image_small.png"
+bm_image_path = get_resource_path("images/bm_image_small.png")
+mm_image_path = get_resource_path("images/mm_image_small.png")
+ss_image_path = get_resource_path("images/ss_image_small.png")
 
 # for 4k monitor
 # buy_delta_x = 1125
@@ -197,7 +196,7 @@ class Looper:
         image = self.vision.get_screenshot()
         ss_found, _ = self.vision.image_detection(image, ss_image_path)
 
-        while not ss_found:
+        if not ss_found:
             # we are not in the secret shop
             # press confirm for daily login and secret shop button repeatedly until we are in the secret shop
             self.daily_confirm()
@@ -209,6 +208,8 @@ class Looper:
             # check whether we are in the secret shop again
             image = self.vision.get_screenshot()
             ss_found, _ = self.vision.image_detection(image, ss_image_path)
+        
+        return ss_found
 
     # refresh loop
     def loop(self):
@@ -230,7 +231,17 @@ class Looper:
 
         while self.refreshes < self.max_refreshes:
             # check and handle reset
-            self.check_handle_reset()
+            in_ss = self.check_handle_reset()
+            while not in_ss:
+                # check for stop
+                # break if needed
+                if stop.is_set():
+                    break
+
+                in_ss = self.check_handle_reset()
+
+            if stop.is_set():
+                break
 
             # check and buy bms
             self.check_buy_bms()

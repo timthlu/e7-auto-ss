@@ -2,6 +2,7 @@ from looper import Looper
 from vision import Vision
 from noiser import Noiser
 from bezier_mouse import BezierMouse
+from resource_path import get_resource_path
 
 import pygetwindow as gw
 import tkinter as tk
@@ -13,8 +14,8 @@ import threading
 window_width = 1302
 window_height = 776
 window_location = [0, 0]
-bm_image_path = "./images/bm_image_small.png"
-mm_image_path = "./images/mm_image_small.png"
+bm_image_path = get_resource_path("images/bm_image_small.png")
+mm_image_path = get_resource_path("images/mm_image_small.png")
 
 # wrapper class
 # controls gui and looping
