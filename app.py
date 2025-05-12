@@ -6,6 +6,8 @@ from bezier_mouse import BezierMouse
 import pygetwindow as gw
 import tkinter as tk
 from PIL import Image, ImageTk
+import time
+import threading
 
 # constants
 window_width = 1302
@@ -25,6 +27,8 @@ class App:
         self.bms_bought = 0
         self.mms_bought = 0
         self.refreshes = 0
+        self.time_elapsed = 0
+        self.timer_id = None
 
     def center_window(self):
         # obtain the application window
@@ -42,9 +46,12 @@ class App:
             print("Could not find an open Epic Seven application window. Ensure that the game is open.")
             return False
 
-    def run_loop(self, speed, deviation, max_refreshes):
+    def run_loop(self, speed, deviation, max_refreshes, on_start, on_stop):
         # center window
         window_found = self.center_window()
+
+        # call on start since we can actually start
+        on_start()
 
         # initialize looper
         if window_found:
@@ -52,7 +59,32 @@ class App:
 
             # start loop
             self.looper.loop()
+        
+        # call on stop when stopped
+        on_stop()
 
+    def run_timer(self):
+        # obtain start time
+        start_time = time.time()
+        cur_time_elapsed = 0
+
+        while not self.stop_timer.is_set():
+            # poll frequently so time is accurate
+            time.sleep(0.2)
+
+            # update time_elapsed from current run
+            cur_time_elapsed = int(time.time() - start_time)
+
+            # update time elapsed label
+            self.time_elapsed_label.config(text=f"Time Elapsed (hh:mm:ss): {time.strftime('%H:%M:%S', time.gmtime(self.time_elapsed + cur_time_elapsed))}")
+
+            # force repaint on ui
+            self.root.update()
+        
+        # update time elapsed for next loop
+        self.time_elapsed += cur_time_elapsed
+
+    # callbacks for the looper
     def increment_bms(self):
         # update counts
         self.bms_bought += 1
@@ -98,82 +130,99 @@ class App:
 
         # force repaint on ui
         self.root.update()
+    
+    # gui button methods
+    def on_start_clicked(self):
+        # obtain input values
+        speed = int(self.speed_entry.get())
+        deviation = int(self.deviation_entry.get())
+        max_skystones = int(self.max_skystones_entry.get())
+        max_refreshes = max_skystones // 3
+
+        # trigger actual loop
+        # use a separate thread to avoid blocking main thread
+        threading.Thread(target=self.run_loop, args=(speed, deviation, max_refreshes, self.on_start, self.on_stop), daemon=True).start()
+    
+    def on_reset_stats_clicked(self):
+        # reset all stats
+        self.bms_bought = 0
+        self.mms_bought = 0
+        self.refreshes = 0
+        self.time_elapsed = 0
+
+        # reset stat label text
+        self.bm_label.config(text=f"{self.bms_bought}")
+        self.mm_label.config(text=f"{self.mms_bought}")
+        self.refreshes_label.config(text=f"# of Refreshes: {self.refreshes}")
+        self.skystones_spent_label.config(text=f"Skystones spent: {self.refreshes * 3}")
+        self.skystones_bm_label.config(text=f"Skystones / Covenant Summon: N/A")
+        self.skystones_mm_label.config(text=f"Skystones / Mystic Summon: N/A")
+        self.time_elapsed_label.config(text=f"Time Elapsed (hh:mm:ss): {time.strftime('%H:%M:%S', time.gmtime(self.time_elapsed))}")
+
+        self.root.update()
+
+    # callbacks for the run_loop function to update the ui
+    # this is since run_loop is run on a different thread and we want to free the main thread
+    def on_start(self):
+        # update gui
+        # delete start button widget and ss label
+        self.start_button.destroy()
+        self.ss_label.destroy()
+
+        # stop label
+        self.stop_label = tk.Label(self.root, text="Taking control of your cursor... press \"q\" at any time to stop!\n(may take a couple seconds to do so)")
+        self.stop_label.pack(pady=15)
+
+        # force repaint on ui
+        self.root.update()
+
+        # initialize a separate thread to run the timer, so that we don't interrupt the looper
+        # trigger timer updates
+        # use a separate thread
+        self.stop_timer = threading.Event()
+        threading.Thread(target=self.run_timer, daemon=True).start()
+
+    def on_stop(self):
+        # stop timer
+        self.stop_timer.set()
+
+        # destroy stop label
+        self.stop_label.destroy()
+
+        # update gui to reconstruct ss label and start button
+        self.ss_label = tk.Label(self.root, text="Ensure your secret shop is open before pressing start!")
+        self.ss_label.pack(pady=15)
+
+        self.start_button = tk.Button(self.root, text="Start!", command=self.on_start_clicked)
+        self.start_button.pack(pady=20)
 
     def run(self):
-        def on_start_clicked():
-            # obtain input values
-            speed = int(speed_entry.get())
-            deviation = int(deviation_entry.get())
-            max_skystones = int(max_skystones_entry.get())
-            max_refreshes = max_skystones // 3
-
-            # update gui
-            # delete start button widget and ss label
-            self.start_button.destroy()
-            self.ss_label.destroy()
-
-            # stop label
-            self.stop_label = tk.Label(self.root, text="Taking control of your cursor... press \"q\" at any time to stop!\n(may take a couple seconds to do so)")
-            self.stop_label.pack(pady=15)
-
-            # force repaint on ui
-            self.root.update()
-
-            # trigger actual loop
-            self.run_loop(speed, deviation, max_refreshes)
-
-            # destroy stop label
-            self.stop_label.destroy()
-
-            # update gui to reconstruct ss label and start button
-            self.ss_label = tk.Label(self.root, text="Ensure your secret shop is open before pressing start!")
-            self.ss_label.pack(pady=15)
-
-            self.start_button = tk.Button(self.root, text="Start!", command=on_start_clicked)
-            self.start_button.pack(pady=20)
-
-        def on_reset_stats_clicked():
-            # reset all stats
-            self.bms_bought = 0
-            self.mms_bought = 0
-            self.refreshes = 0
-
-            # reset stat label text
-            self.bm_label.config(text=f"{self.bms_bought}")
-            self.mm_label.config(text=f"{self.mms_bought}")
-            self.refreshes_label.config(text=f"# of Refreshes: {self.refreshes}")
-            self.skystones_spent_label.config(text=f"Skystones spent: {self.refreshes * 3}")
-            self.skystones_bm_label.config(text=f"Skystones / Covenant Summon: N/A")
-            self.skystones_mm_label.config(text=f"Skystones / Mystic Summon: N/A")
-
-            self.root.update()
-
         # initialize gui
         self.root = tk.Tk()
         self.root.title("E7 Auto SS")
-        self.root.geometry("500x1000")
+        self.root.geometry("500x1200")
 
         # stats label
-        stats_label = tk.Label(self.root, text="Statistics", font=("Helvetica", 16, "bold"))
-        stats_label.pack(pady=10)
+        self.stats_label = tk.Label(self.root, text="Statistics", font=("Helvetica", 16, "bold"))
+        self.stats_label.pack(pady=10)
 
         # create bm and mm images and counters
         bm_image = ImageTk.PhotoImage(Image.open(bm_image_path))
         mm_image = ImageTk.PhotoImage(Image.open(mm_image_path))
 
-        bm_frame = tk.Frame(self.root)
-        bm_frame.pack(pady=10)
-        mm_frame = tk.Frame(self.root)
-        mm_frame.pack(pady=10)
+        self.bm_frame = tk.Frame(self.root)
+        self.bm_frame.pack(pady=10)
+        self.mm_frame = tk.Frame(self.root)
+        self.mm_frame.pack(pady=10)
 
-        self.bm_image_label = tk.Label(bm_frame, image=bm_image)
-        self.mm_image_label = tk.Label(mm_frame, image=mm_image)
+        self.bm_image_label = tk.Label(self.bm_frame, image=bm_image)
+        self.mm_image_label = tk.Label(self.mm_frame, image=mm_image)
 
         self.bm_image_label.pack(side="left", padx=10)
         self.mm_image_label.pack(side="left", padx=10)
 
-        self.bm_label = tk.Label(bm_frame, text=f"{self.bms_bought}")
-        self.mm_label = tk.Label(mm_frame, text=f"{self.mms_bought}")
+        self.bm_label = tk.Label(self.bm_frame, text=f"{self.bms_bought}")
+        self.mm_label = tk.Label(self.mm_frame, text=f"{self.mms_bought}")
 
         self.bm_label.pack(side="left")
         self.mm_label.pack(side="left")
@@ -194,47 +243,51 @@ class App:
         self.skystones_mm_label = tk.Label(self.root, text=f"Skystones / Mystic Summon: N/A")
         self.skystones_mm_label.pack(pady=10)
 
+        # time elapsed label
+        self.time_elapsed_label = tk.Label(self.root, text=f"Time Elapsed (hh:mm:ss): {time.strftime('%H:%M:%S', time.gmtime(self.time_elapsed))}")
+        self.time_elapsed_label.pack(pady=10)
+
         # reset stats button
-        self.reset_stats_button = tk.Button(self.root, text="Reset Stats", command=on_reset_stats_clicked)
+        self.reset_stats_button = tk.Button(self.root, text="Reset Stats", command=self.on_reset_stats_clicked)
         self.reset_stats_button.pack(pady=10)
 
         # control panel label
-        control_panel_label = tk.Label(self.root, text="Control Panel", font=("Helvetica", 16, "bold"))
-        control_panel_label.pack(pady=10)
+        self.control_panel_label = tk.Label(self.root, text="Control Panel", font=("Helvetica", 16, "bold"))
+        self.control_panel_label.pack(pady=10)
 
         # speed label
-        speed_label = tk.Label(self.root, text="Speed:")
-        speed_label.pack(pady=10)
+        self.speed_label = tk.Label(self.root, text="Speed:")
+        self.speed_label.pack(pady=10)
 
         # speed input
-        speed_entry = tk.Entry(self.root, width=30)
-        speed_entry.pack(pady=10)
-        speed_entry.insert(0, 1)
+        self.speed_entry = tk.Entry(self.root, width=30)
+        self.speed_entry.pack(pady=10)
+        self.speed_entry.insert(0, 1)
 
         # deviation label
-        deviation_label = tk.Label(self.root, text="Deviation:")
-        deviation_label.pack(pady=10)
+        self.deviation_label = tk.Label(self.root, text="Deviation:")
+        self.deviation_label.pack(pady=10)
 
         # deviation input
-        deviation_entry = tk.Entry(self.root, width=30)
-        deviation_entry.pack(pady=10)
-        deviation_entry.insert(0, 10)
+        self.deviation_entry = tk.Entry(self.root, width=30)
+        self.deviation_entry.pack(pady=10)
+        self.deviation_entry.insert(0, 10)
 
         # max skystones to spend label
-        max_skystones_label = tk.Label(self.root, text="Max # of Skystones to Spend:")
-        max_skystones_label.pack(pady=10)
+        self.max_skystones_label = tk.Label(self.root, text="Max # of Skystones to Spend:")
+        self.max_skystones_label.pack(pady=10)
 
         # max skystones input
-        max_skystones_entry = tk.Entry(self.root, width=30)
-        max_skystones_entry.pack(pady=10)
-        max_skystones_entry.insert(0, 100)
+        self.max_skystones_entry = tk.Entry(self.root, width=30)
+        self.max_skystones_entry.pack(pady=10)
+        self.max_skystones_entry.insert(0, 100)
 
         # ss label
         self.ss_label = tk.Label(self.root, text="Ensure your secret shop is open before pressing start!")
         self.ss_label.pack(pady=10)
 
         # start button
-        self.start_button = tk.Button(self.root, text="Start!", command=on_start_clicked)
+        self.start_button = tk.Button(self.root, text="Start!", command=self.on_start_clicked)
         self.start_button.pack(pady=10)
 
         # start gui

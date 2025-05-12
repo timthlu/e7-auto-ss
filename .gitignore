@@ -1,8 +1,7 @@
 *__pycache__
 /mouse_movement/tools.py
-/images/*
-!/images/bm_image_small.png
-!/images/mm_image_small.png
-!/images/bm_bought_image_small.png
-!/images/mm_bought_image_small.png
-!/images/ss_image_small.png
+/unused_images
+
+/build
+/dist
+main.spec

@@ -220,7 +220,7 @@ class Looper:
             print("Stopping...")
 
             # update gui
-            # self.trigger_stop()
+            self.trigger_stop()
 
             # set thread safe flag
             stop.set()
