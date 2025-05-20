@@ -17,7 +17,7 @@
 2. Download the app here: [e7-auto-ss.exe](https://github.com/timthlu/e7-auto-ss/releases/download/v1.0.0/e7-auto-ss.exe)
 3. Run E7 and navigate to the secret shop
 4. Run e7-auto-ss.exe **as administrator**. A UI should start up after a couple seconds.
-5. Select your settings and press start!
+5. Select your settings and press start! The refresher will move and resize your application and take control of your cursor.
 
 Settings/Controls:
 * Speed: cursor movement speed. *An integer >= 1*. Smaller means faster, larger means slower but smoother cursor movements. 
@@ -28,3 +28,4 @@ Settings/Controls:
 Tips:
 * Try not to move your cursor after pressing start. It may interfere with the pathing and may cause the refresher to miss.
 * Try to have a stable internet connection. Too much buffering may interfere with the pathing and may cause the refresher to miss.
+* If you are leaving the refresher on overnight, please remove the shortcut icons at the bottom of the lobby screen, as during daily server reset it may interfere with the refresher's routing past the daily login reward screens and back into the secret shop. The refresher may click an icon at the bottom of the lobby and end up someplace completely unfamiliar and execute some undefined behaviour...
