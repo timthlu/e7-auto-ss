@@ -43,7 +43,7 @@ refresh_confirm_y = 500
 daily_confirm_x = 1025
 daily_confirm_y = 700
 ss_x = 60
-ss_y = 310
+ss_y = 355
 buffs_x = 650
 buffs_y = 720
 
