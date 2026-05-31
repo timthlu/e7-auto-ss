@@ -14,7 +14,7 @@
 
 ## Instructions
 1. Download the E7 PC client (currently only tested on windows)
-2. Download the app here: [e7-auto-ss.exe](https://github.com/timthlu/e7-auto-ss/releases/download/v1.0.0/e7-auto-ss.exe)
+2. Download the app here: [e7-auto-ss.exe](https://github.com/timthlu/e7-auto-ss/releases/latest/download/e7-auto-ss.exe)
 3. Run E7 and navigate to the secret shop
 4. Run e7-auto-ss.exe **as administrator**. A UI should start up after a couple seconds.
 5. Select your settings and press start! The refresher will move and resize your application and take control of your cursor.
